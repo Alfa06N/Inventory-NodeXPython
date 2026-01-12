@@ -1,4 +1,4 @@
-# Mini Project - Node API Gateway + Python (FastAPI) Backend 🔧
+# Microservices Architecture - Node API Gateway + Python (FastAPI) Backend 🔧
 
 ## Table of Contents
 
@@ -29,7 +29,7 @@ Services are composed with Docker for easy development and deployment.
 
 - `api-gateway-node/` — Express gateway listening on port **3000**. Routes include `/products`, `/product`, and `/product/:id/...`.
 - `backend-python/` — FastAPI app exposing product management endpoints on port **8000**.
-- `docker-compose.yml` wires the services together and uses SQLite for persistence.
+- `docker-compose.yml` wires the services together and can use **MySQL** for persistence (see the Database section for configuration and examples).
 
 ---
 
@@ -139,7 +139,7 @@ All examples below use the Node gateway at `http://localhost:3000`.
 - GET `/product/{id}/movements`
   - List stock movements for a product
 
-Note: The Node gateway forwards requests to the Python service which persists data in SQLite.
+Note: The Node gateway forwards requests to the Python service which persists data in **MySQL** (configured via the `DATABASE_URL` environment variable).
 
 ---
 
@@ -148,15 +148,39 @@ Note: The Node gateway forwards requests to the Python service which persists da
 - `api-gateway-node`:
   - `PYTHON_SERVICE_URL` — URL of the Python microservice (default in Docker Compose: `http://python-api:8000`).
 - `backend-python`:
-  - `DATABASE_URL` — SQLAlchemy database URL (Docker Compose sets `sqlite:///./test.db`).
+  - `DATABASE_URL` — SQLAlchemy database URL (e.g., `mysql+pymysql://user:password@mysql:3306/app_db`). When using Docker Compose, add a MySQL service and set the `DATABASE_URL` to point to it (example in the Database section).
 
 ---
 
 ## Database 🗃️
 
-- Uses SQLite by default (`test.db` in the `backend-python` folder).
-- Database tables are created automatically when the app runs.
-- There are no migration scripts included — suitable for local development and demos.
+- Uses **MySQL** for persistence (recommended for development and production setups).
+- Example Docker Compose MySQL service to add to `docker-compose.yml`:
+
+```yaml
+mysql:
+  image: mysql:8.0
+  environment:
+    MYSQL_ROOT_PASSWORD: example
+    MYSQL_DATABASE: app_db
+    MYSQL_USER: user
+    MYSQL_PASSWORD: secret
+  ports:
+    - "3306:3306"
+  volumes:
+    - mysql-data:/var/lib/mysql
+```
+
+- Set the `DATABASE_URL` to point to the MySQL service, for example:
+
+```
+DATABASE_URL=mysql+pymysql://user:secret@mysql:3306/app_db
+```
+
+- The application uses SQLAlchemy and `pymysql` (already included in `requirements.txt`) to connect to MySQL.
+- Database tables are created automatically when the app runs. There are no migration scripts included—consider adding Alembic for schema migrations in the future.
+
+- Tip: Persist MySQL data via a named Docker volume (`mysql-data`) so your database is retained between container restarts.
 
 ---
 

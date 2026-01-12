@@ -1,14 +1,29 @@
 version: "3.8"
 
 services:
+  db:
+    image: mysql:8.0
+    container_name: mysql-db
+    restart: always
+    environment:
+      MYSQL_DATABASE: my_database
+      MYSQL_ROOT_PASSWORD: root_password
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
   python-api:
     build: ./backend-python
+    restart: on-failure
+    depends_on:
+      - db
     ports:
       - "8000:8000"
     volumes:
       - ./backend-python:/app
     environment:
-      - DATABASE_URL=sqlite:///./test.db
+      - DATABASE_URL=mysql+pymysql://root:root_password@db:3306/my_database
 
   node-gateway:
     build: ./api-gateway-node
@@ -21,3 +36,6 @@ services:
       - PYTHON_SERVICE_URL=http://python-api:8000
     depends_on:
       - python-api
+
+volumes:
+  mysql_data:
